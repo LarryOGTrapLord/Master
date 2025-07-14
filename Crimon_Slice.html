@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Character Folio: Crimson Slice</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&family=Playfair+Display:wght@700&display=swap" rel="stylesheet">
+    <!-- Chosen Palette: Warm Neutral with Crimson Accent -->
+    <!-- Application Structure Plan: A two-column, dashboard-style layout. The left column provides at-a-glance visual and core data (image, key stats). The right column uses a tabbed navigation system (Profile, Lore, Abilities) to break down the dense textual information. This structure was chosen to prevent overwhelming the user with a wall of text, promoting non-linear, self-directed exploration of the character. The user can get a quick summary or dive deep into specific areas of interest, making the consumption of character lore more engaging and manageable. -->
+    <!-- Visualization & Content Choices: 
+        - Core Info -> Goal: Inform -> Viz: Styled Definition List -> Interaction: Static -> Justification: Clear, scannable presentation of key stats.
+        - Personality Traits -> Goal: Compare/Analyze -> Viz: Radar Chart (Chart.js) -> Interaction: Hover tooltips -> Justification: Visualizes qualitative traits as quantitative-style data, offering a unique, at-a-glance summary of her personality balance. It's more engaging than a simple list.
+        - Detailed Info (Personality, Lore, etc.) -> Goal: Organize/Inform -> Viz: Tabbed Content Panels -> Interaction: Click to switch content -> Justification: Segments large amounts of text into thematic, digestible chunks, improving readability and user control over the information flow.
+        - Abilities & Hooks -> Goal: Organize/Inform -> Viz: Styled Cards -> Interaction: Subtle hover effects -> Justification: Organizes distinct concepts into visually separate containers, making them easy to read and differentiate.
+    -->
+    <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        .font-display {
+            font-family: 'Playfair Display', serif;
+        }
+        .tab-button.active {
+            border-color: #DC2626;
+            background-color: #FEF2F2;
+            color: #DC2626;
+            font-weight: 500;
+        }
+        .chart-container {
+            position: relative;
+            width: 100%;
+            max-width: 500px;
+            margin-left: auto;
+            margin-right: auto;
+            height: 300px;
+            max-height: 400px;
+        }
+        @media (min-width: 768px) {
+            .chart-container {
+                height: 350px;
+            }
+        }
+    </style>
+</head>
+<body class="bg-stone-100 text-stone-800 antialiased">
+
+    <div class="container mx-auto p-4 md:p-8 max-w-7xl">
+        
+        <header class="text-center mb-8 md:mb-12">
+            <h1 class="font-display text-4xl md:text-6xl font-bold text-red-800">Seraphina "Sera" Nocturne</h1>
+            <p class="text-lg md:text-xl text-stone-600 mt-2">Goth/Emo Pizza Enthusiast, Euphoric Gourmand, Enigmatic Night-Dweller</p>
+        </header>
+
+        <main class="grid grid-cols-1 lg:grid-cols-3 gap-8 md:gap-12">
+            
+            <aside class="lg:col-span-1 space-y-8">
+                <div class="bg-white rounded-xl shadow-lg p-6">
+                    <div class="aspect-square rounded-lg flex items-center justify-center mb-6 overflow-hidden">
+                        <img src="_FILE_PROXY_/image_057e28.jpg" alt="Hyper-realistic anime-style goth/emo girl eating pizza" class="object-cover w-full h-full">
+                    </div>
+                    <h2 class="font-display text-2xl font-bold text-stone-900 mb-4">Core Information</h2>
+                    <dl class="space-y-3 text-sm">
+                        <div class="flex justify-between"><dt class="font-medium text-stone-600">Alias</dt><dd class="text-right text-red-700 font-semibold">Crimson Slice</dd></div>
+                        <div class="flex justify-between"><dt class="font-medium text-stone-600">Age</dt><dd class="text-right">Appears 19-22</dd></div>
+                        <div class="flex justify-between"><dt class="font-medium text-stone-600">Species</dt><dd class="text-right">Human / Supernatural</dd></div>
+                        <div class="flex justify-between"><dt class="font-medium text-stone-600">Height</dt><dd class="text-right">5'7" (170 cm)</dd></div>
+                        <div class="flex justify-between"><dt class="font-medium text-stone-600">Weight</dt><dd class="text-right">110 lbs (50 kg)</dd></div>
+                        <div class="flex justify-between"><dt class="font-medium text-stone-600">Features</dt><dd class="text-right">Sharp Canines, Long Neck</dd></div>
+                    </dl>
+                </div>
+
+                <div class="bg-white rounded-xl shadow-lg p-6">
+                    <h2 class="font-display text-2xl font-bold text-stone-900 mb-2">Personality Profile</h2>
+                    <p class="text-sm text-stone-600 mb-4">A visual representation of Sera's key personality traits. This chart balances her intense focus and emotional depth against her solitary nature.</p>
+                    <div class="chart-container">
+                        <canvas id="personalityChart"></canvas>
+                    </div>
+                </div>
+            </aside>
+
+            <section class="lg:col-span-2 bg-white rounded-xl shadow-lg p-6 md:p-8">
+                <div class="mb-6">
+                    <div id="tabs" class="flex border-b border-stone-200 space-x-2 sm:space-x-4">
+                        <button data-tab="profile" class="tab-button text-sm sm:text-base px-3 py-2 border-b-2 transition-colors duration-200">Profile & Style</button>
+                        <button data-tab="lore" class="tab-button text-sm sm:text-base px-3 py-2 border-b-2 transition-colors duration-200">Lore & Habits</button>
+                        <button data-tab="abilities" class="tab-button text-sm sm:text-base px-3 py-2 border-b-2 transition-colors duration-200">Abilities & Hooks</button>
+                    </div>
+                </div>
+
+                <div id="tab-content">
+                    <article id="profile-content" class="tab-panel space-y-6">
+                        <div>
+                            <h3 class="font-display text-2xl font-bold text-stone-900 mb-2">Personality & Traits</h3>
+                            <p class="text-stone-600 leading-relaxed">This section delves into the core of who Sera is. She is a study in contrasts: outwardly quiet and observant, yet capable of profound, theatrical expressions of joy. Her entire being is geared towards the intense, authentic pursuit of sensory experience.</p>
+                        </div>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div>
+                                <h4 class="font-semibold text-lg mb-2 text-green-700">Strengths</h4>
+                                <ul class="space-y-2 list-inside">
+                                    <li class="flex items-start"><span class="text-green-600 mr-2 mt-1">◆</span><span><strong class="font-medium">Sensory Acuity:</strong> Highly attuned to taste, smell, and texture.</span></li>
+                                    <li class="flex items-start"><span class="text-green-600 mr-2 mt-1">◆</span><span><strong class="font-medium">Emotional Intensity:</strong> Experiences emotions deeply and without reservation.</span></li>
+                                    <li class="flex items-start"><span class="text-green-600 mr-2 mt-1">◆</span><span><strong class="font-medium">Focus:</strong> Can become completely absorbed in a task or pleasure.</span></li>
+                                    <li class="flex items-start"><span class="text-green-600 mr-2 mt-1">◆</span><span><strong class="font-medium">Resilience:</strong> Appears delicate but possesses an underlying strength of will.</span></li>
+                                </ul>
+                            </div>
+                            <div>
+                                <h4 class="font-semibold text-lg mb-2 text-red-700">Weaknesses</h4>
+                                <ul class="space-y-2 list-inside">
+                                    <li class="flex items-start"><span class="text-red-600 mr-2 mt-1">◆</span><span><strong class="font-medium">Obsessive Tendencies:</strong> Her passions can border on obsession, particularly with food.</span></li>
+                                    <li class="flex items-start"><span class="text-red-600 mr-2 mt-1">◆</span><span><strong class="font-medium">Social Detachment:</strong> Can struggle with casual social interaction.</span></li>
+                                    <li class="flex items-start"><span class="text-red-600 mr-2 mt-1">◆</span><span><strong class="font-medium">Sensory Vulnerability:</strong> Reacts poorly to blandness or lack of stimulation.</span></li>
+                                </ul>
+                            </div>
+                        </div>
+                        <div>
+                            <h3 class="font-display text-2xl font-bold text-stone-900 mt-6 mb-2">Appearance & Style</h3>
+                            <p class="text-stone-600 leading-relaxed">Sera's style is a deliberate expression of her character: a blend of goth/emo aesthetics with a striking, vibrant twist of red. Her look is minimalist yet bold, designed to be both comfortable and visually impactful, mirroring her personality.</p>
+                            <ul class="mt-4 space-y-2 text-stone-700">
+                                <li><strong>Aesthetic:</strong> Goth/Emo with an ethereal quality and a dominant red accent.</li>
+                                <li><strong>Attire:</strong> Red spaghetti strap tank top, matching short bloomers, and a simple black choker.</li>
+                                <li><strong>Body Language:</strong> Typically poised and still, becoming fluid and expressive when focused on a sensory experience.</li>
+                            </ul>
+                        </div>
+                    </article>
+
+                    <article id="lore-content" class="tab-panel space-y-6 hidden">
+                        <div>
+                            <h3 class="font-display text-2xl font-bold text-stone-900 mb-2">Background & Lore</h3>
+                            <p class="text-stone-600 leading-relaxed">The origins of Crimson Slice are a mystery, adding to her enigmatic persona. This section explores the possible explanations for her unique traits and her current lifestyle as a nocturnal wanderer on a quest for culinary perfection. Her story is one of quiet searching and profound, personal discovery.</p>
+                             <ul class="mt-4 list-disc list-inside space-y-2">
+                                <li><strong>A Human with a Rare Condition:</strong> Heightened senses and metabolism could explain her traits.</li>
+                                <li><strong>A Fae Creature:</strong> Drawn from a magical realm to the intense flavors of the human world.</li>
+                                <li><strong>A Dimensional Being:</strong> Hailing from a plane where emotions and sensations are naturally more vivid.</li>
+                            </ul>
+                        </div>
+                        <div>
+                            <h3 class="font-display text-2xl font-bold text-stone-900 mb-2">Quirks & Habits</h3>
+                            <p class="text-stone-600 leading-relaxed">Sera's behaviors are as unique as she is. Her habits revolve around her sensory focus, from her ritualistic approach to pizza to her paradoxical pickiness. These quirks define her daily existence and interactions with the world.</p>
+                            <ul class="mt-4 space-y-3">
+                                <li><strong class="font-medium">Pizza Ritual:</strong> Approaches her favorite food with an almost sacred reverence and focused deliberation.</li>
+                                <li><strong class="font-medium">Dramatic Expressions:</strong> Her face and body become incredibly animated during moments of intense pleasure.</li>
+                                <li><strong class="font-medium">Quiet Observation:</strong> Spends a great deal of time simply watching and absorbing details from her surroundings.</li>
+                                <li><strong class="font-medium">Nocturnal Preference:</strong> Most active during the night, finding comfort in the quiet hours.</li>
+                                <li><strong class="font-medium">Paradoxical Pickiness:</strong> Loves intense flavors but is extremely selective about quality and preparation.</li>
+                            </ul>
+                        </div>
+                    </article>
+
+                    <article id="abilities-content" class="tab-panel space-y-6 hidden">
+                        <div>
+                            <h3 class="font-display text-2xl font-bold text-stone-900 mb-2">Potential Abilities</h3>
+                            <p class="text-stone-600 leading-relaxed">This section outlines the potential supernatural or extraordinary abilities Sera might possess, suitable for integration into games or stories. These powers are extensions of her core personality, rooted in her intense sensory and emotional experiences.</p>
+                        </div>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div class="bg-stone-50 rounded-lg p-4 border border-stone-200 transition-all hover:shadow-md hover:border-red-200">
+                                <h4 class="font-semibold text-lg text-red-800">Sensory Amplification</h4>
+                                <p class="text-sm text-stone-600">Can temporarily heighten her senses to an extraordinary degree, perfect for discerning ingredients, tracking scents, or noticing minute details.</p>
+                            </div>
+                            <div class="bg-stone-50 rounded-lg p-4 border border-stone-200 transition-all hover:shadow-md hover:border-red-200">
+                                <h4 class="font-semibold text-lg text-red-800">Minor Charm/Euphoria</h4>
+                                <p class="text-sm text-stone-600">Her intense bliss can subtly affect those around her, calming situations or making others more receptive.</p>
+                            </div>
+                            <div class="bg-stone-50 rounded-lg p-4 border border-stone-200 transition-all hover:shadow-md hover:border-red-200">
+                                <h4 class="font-semibold text-lg text-red-800">Enhanced Agility/Stealth</h4>
+                                <p class="text-sm text-stone-600">Her slender build allows for unusual grace, speed, and quiet movement, useful for navigating spaces unnoticed.</p>
+                            </div>
+                             <div class="bg-stone-50 rounded-lg p-4 border border-stone-200 transition-all hover:shadow-md hover:border-red-200">
+                                <h4 class="font-semibold text-lg text-red-800">Rapid Metabolism</h4>
+                                <p class="text-sm text-stone-600">Her enjoyment of food may fuel a slightly accelerated healing process or provide bursts of stamina.</p>
+                            </div>
+                        </div>
+                        <div>
+                            <h3 class="font-display text-2xl font-bold text-stone-900 mt-6 mb-2">Character & Plot Hooks</h3>
+                            <p class="text-stone-600 leading-relaxed">These ideas provide starting points for stories or game campaigns featuring Crimson Slice, leveraging her unique motivations and abilities to create compelling narratives.</p>
+                            <ul class="mt-4 list-disc list-inside space-y-2">
+                                <li><strong>The Ultimate Flavor:</strong> A quest to find a legendary dish that promises unparalleled sensory experience.</li>
+                                <li><strong>Culinary Detective:</strong> Using her heightened senses to solve mysteries related to food, poisons, or rare ingredients.</li>
+                                <li><strong>Gourmand's Duel:</strong> A high-stakes culinary contest against another eccentric food-lover.</li>
+                                <li><strong>Personal Growth:</strong> A story focused on her learning to form deeper emotional connections with others.</li>
+                            </ul>
+                        </div>
+                    </article>
+                </div>
+            </section>
+
+        </main>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const tabsContainer = document.getElementById('tabs');
+            const contentContainer = document.getElementById('tab-content');
+            const tabButtons = tabsContainer.querySelectorAll('.tab-button');
+            const tabPanels = contentContainer.querySelectorAll('.tab-panel');
+
+            function switchTab(targetTabId) {
+                tabButtons.forEach(button => {
+                    if (button.dataset.tab === targetTabId) {
+                        button.classList.add('active');
+                    } else {
+                        button.classList.remove('active');
+                    }
+                });
+
+                tabPanels.forEach(panel => {
+                    if (panel.id === `${targetTabId}-content`) {
+                        panel.classList.remove('hidden');
+                    } else {
+                        panel.classList.add('hidden');
+                    }
+                });
+            }
+            
+            tabsContainer.addEventListener('click', (event) => {
+                if (event.target.matches('.tab-button')) {
+                    const targetTab = event.target.dataset.tab;
+                    switchTab(targetTab);
+                }
+            });
+
+            switchTab('profile');
+
+            const ctx = document.getElementById('personalityChart').getContext('2d');
+            new Chart(ctx, {
+                type: 'radar',
+                data: {
+                    labels: [
+                        'Sensory Acuity',
+                        'Emotional Intensity',
+                        'Focus',
+                        'Resilience',
+                        'Social Detachment',
+                        'Obsessive Tendencies'
+                    ],
+                    datasets: [{
+                        label: 'Sera\'s Traits',
+                        data: [9, 8, 8, 7, 7, 6],
+                        backgroundColor: 'rgba(220, 38, 38, 0.2)',
+                        borderColor: 'rgba(220, 38, 38, 1)',
+                        pointBackgroundColor: 'rgba(220, 38, 38, 1)',
+                        pointBorderColor: '#fff',
+                        pointHoverBackgroundColor: '#fff',
+                        pointHoverBorderColor: 'rgba(220, 38, 38, 1)'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        r: {
+                            angleLines: {
+                                color: 'rgba(0, 0, 0, 0.1)'
+                            },
+                            grid: {
+                                color: 'rgba(0, 0, 0, 0.1)'
+                            },
+                            pointLabels: {
+                                font: {
+                                    size: 11
+                                },
+                                color: '#44403c'
+                            },
+                            ticks: {
+                                backdropColor: 'rgba(254, 249, 231, 0)',
+                                color: 'rgba(120, 113, 108, 0.7)',
+                                stepSize: 2
+                            },
+                            min: 0,
+                            max: 10
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            display: false
+                        }
+                    }
+                }
+            });
+        });
+    </script>
+
+</body>
+</html>
