@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Wan 2.x Prompt Engine Canvas</title>
+    <style>
+        :root {
+            --bg-color: #1a1a1a;
+            --panel-color: #252525;
+            --accent-color: #7d8ca3; /* Deftones-ish slate blue */
+            --text-color: #e0e0e0;
+            --code-bg: #111;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            height: 100vh;
+            box-sizing: border-box;
+            gap: 20px;
+        }
+
+        .input-panel {
+            flex: 1;
+            background: var(--panel-color);
+            padding: 20px;
+            border-radius: 12px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+        }
+
+        .output-panel {
+            flex: 1;
+            background: var(--code-bg);
+            padding: 20px;
+            border-radius: 12px;
+            font-family: 'Courier New', monospace;
+            overflow-y: auto;
+            border: 1px solid #333;
+        }
+
+        h2 { margin-top: 0; color: var(--accent-color); }
+        label { font-size: 0.85rem; font-weight: bold; color: #888; display: block; margin-bottom: 5px; }
+        
+        input, textarea {
+            width: 100%;
+            background: #333;
+            border: 1px solid #444;
+            color: white;
+            padding: 10px;
+            border-radius: 6px;
+            box-sizing: border-box;
+            font-family: inherit;
+        }
+
+        textarea { resize: vertical; min-height: 80px; }
+
+        .btn {
+            background: var(--accent-color);
+            color: white;
+            border: none;
+            padding: 12px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: background 0.2s;
+        }
+        .btn:hover { background: #6b7a8f; }
+
+        .image-row {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            background: #333;
+            padding: 10px;
+            border-radius: 6px;
+            margin-bottom: 5px;
+        }
+        .image-row input { background: #222; }
+        .remove-btn { background: #cc4444; width: auto; padding: 5px 10px; }
+
+        pre { white-space: pre-wrap; word-wrap: break-word; color: #a6e22e; }
+        
+        /* Helper for the JSON specific aesthetic */
+        .key { color: #66d9ef; }
+        .string { color: #e6db74; }
+    </style>
+</head>
+<body>
+
+    <div class="input-panel">
+        <h2>Prompt Engine Canvas</h2>
+        
+        <div>
+            <label>System Instruction (Tone)</label>
+            <input type="text" id="systemPrompt" value="You are an expert cinematographer. Produce a single descriptive generation prompt.">
+        </div>
+
+        <div>
+            <label>Style Preset</label>
+            <input type="text" id="stylePrompt" value="gouache, warm studio lighting, cinematic lens">
+        </div>
+
+        <div>
+            <label>User Prompt (The Scene)</label>
+            <textarea id="userPrompt" placeholder="Describe the scene...">cinematic shot, car garage crashing, massive particle explosion, debris, dynamic lighting</textarea>
+        </div>
+
+        <div>
+            <label>Negative Prompt (Safety)</label>
+            <textarea id="negativePrompt">bad anatomy, decapitated, headless, severed head, disappearing head, disconnected limbs, floating head, morphing body, mutating, neck gore, body horror, distorted features, melting, glitch</textarea>
+        </div>
+
+        <div>
+            <label>Reference Images (Wan I2V)</label>
+            <div id="imageContainer"></div>
+            <button class="btn" style="background:#444; margin-top:5px;" onclick="addImageSlot()">+ Add Image URL</button>
+        </div>
+
+        <div>
+            <label>Config (CFG & Steps)</label>
+            <div style="display:flex; gap:10px;">
+                <input type="number" id="cfgScale" value="7.5" step="0.1" placeholder="Guidance">
+                <input type="number" id="steps" value="30" step="1" placeholder="Steps">
+            </div>
+        </div>
+    </div>
+
+    <div class="output-panel">
+        <h2>JSON Payload Output</h2>
+        <div id="jsonOutput"></div>
+        <button class="btn" onclick="copyToClipboard()" style="margin-top:20px; width:100%;">Copy JSON to Clipboard</button>
+    </div>
+
+    <script>
+        // Initialize with one image slot
+        addImageSlot();
+
+        // Event Listeners to auto-update
+        const inputs = document.querySelectorAll('input, textarea');
+        inputs.forEach(input => input.addEventListener('input', generatePayload));
+
+        function addImageSlot() {
+            const container = document.getElementById('imageContainer');
+            const div = document.createElement('div');
+            div.className = 'image-row';
+            div.innerHTML = `
+                <input type="text" placeholder="Image URL / Path" class="img-url">
+                <input type="number" value="1.0" step="0.1" style="width:70px" placeholder="Wgt" class="img-weight">
+                <button class="btn remove-btn" onclick="this.parentElement.remove(); generatePayload()">X</button>
+            `;
+            container.appendChild(div);
+            // Add listener to new inputs
+            div.querySelectorAll('input').forEach(i => i.addEventListener('input', generatePayload));
+        }
+
+        function generatePayload() {
+            // 1. Gather Data
+            const system = document.getElementById('systemPrompt').value;
+            const style = document.getElementById('stylePrompt').value;
+            const prompt = document.getElementById('userPrompt').value;
+            const negative = document.getElementById('negativePrompt').value;
+            const cfg = parseFloat(document.getElementById('cfgScale').value);
+            const steps = parseInt(document.getElementById('steps').value);
+
+            // 2. Compose Text Prompt (Mimicking Python Logic)
+            let composedText = "";
+            if(system) composedText += `[SYSTEM] ${system}\n\n`;
+            if(style) composedText += `[STYLE] ${style}\n\n`;
+            composedText += `[PROMPT] ${prompt}\n\n`;
+            if(negative) composedText += `[NEGATIVE] ${negative}`;
+
+            // 3. Gather Images
+            const imgRows = document.querySelectorAll('.image-row');
+            let imageList = [];
+            imgRows.forEach(row => {
+                const url = row.querySelector('.img-url').value;
+                const weight = parseFloat(row.querySelector('.img-weight').value);
+                if(url) {
+                    imageList.push({ url: url, weight: weight });
+                }
+            });
+
+            // 4. Construct JSON Object
+            const payload = {
+                "text_prompt": composedText,
+                "image_prompt": imageList.length > 0 ? imageList : null,
+                "payload_meta": {
+                    "cfg": { "guidance_scale": cfg, "steps": steps }
+                }
+            };
+
+            // 5. Render JSON
+            const jsonStr = JSON.stringify(payload, null, 2);
+            document.getElementById('jsonOutput').innerHTML = `<pre>${syntaxHighlight(jsonStr)}</pre>`;
+        }
+
+        function syntaxHighlight(json) {
+            json = json.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+            return json.replace(/("(\\u[a-zA-Z0-9]{4}|\\[^u]|[^\\"])*"(\s*:)?|\b(true|false|null)\b|-?\d+(?:\.\d*)?(?:[eE][+\-]?\d+)?)/g, function (match) {
+                var cls = 'number';
+                if (/^"/.test(match)) {
+                    if (/:$/.test(match)) {
+                        cls = 'key';
+                    } else {
+                        cls = 'string';
+                    }
+                } else if (/true|false/.test(match)) {
+                    cls = 'boolean';
+                } else if (/null/.test(match)) {
+                    cls = 'null';
+                }
+                return '<span class="' + cls + '">' + match + '</span>';
+            });
+        }
+
+        function copyToClipboard() {
+            const text = document.getElementById('jsonOutput').innerText;
+            navigator.clipboard.writeText(text);
+            alert("JSON payload copied to clipboard!");
+        }
+
+        // Run once on load
+        generatePayload();
+    </script>
+</body>
+</html>
